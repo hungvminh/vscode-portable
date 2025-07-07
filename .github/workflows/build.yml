@@ -43,7 +43,7 @@ jobs:
         name: Download VSCode
         shell: powershell
         run: |
-          $version = "1.101"
+          $version = "1.101.2"
           $url = "https://update.code.visualstudio.com/$version/win32-x64-archive/stable"
           Write-Host "Downloading VSCode $version from: $url"
           
