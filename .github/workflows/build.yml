@@ -47,10 +47,8 @@ jobs:
           $url = "https://update.code.visualstudio.com/$version/win32-x64-archive/stable"
           Write-Host "Downloading VSCode $version from: $url"
           
-          # Create temp directory
           New-Item -ItemType Directory -Path "temp" -Force
           
-          # Download with retry logic
           $maxRetries = 3
           $retryCount = 0
           do {
@@ -66,15 +64,12 @@ jobs:
             }
           } while ($retryCount -lt $maxRetries)
           
-          # Extract
           Write-Host "Extracting VSCode..."
           Expand-Archive -Path "temp/vscode.zip" -DestinationPath "temp/vscode-extracted" -Force
           
-          # Move to app directory
           New-Item -ItemType Directory -Path "app" -Force
           Move-Item "temp/vscode-extracted/*" "app/" -Force
           
-          # Verify extraction
           if (!(Test-Path "app/Code.exe")) { 
             Write-Error "VSCode extraction failed - Code.exe not found"
             exit 1 
@@ -86,7 +81,6 @@ jobs:
         run: |
           Write-Host "Creating portable structure..."
           
-          # Create portable directory structure
           New-Item -ItemType Directory -Path "vscode-portable" -Force
           New-Item -ItemType Directory -Path "vscode-portable/app" -Force
           New-Item -ItemType Directory -Path "vscode-portable/data" -Force
@@ -94,42 +88,21 @@ jobs:
           New-Item -ItemType Directory -Path "vscode-portable/data/extensions" -Force
           New-Item -ItemType Directory -Path "vscode-portable/data/logs" -Force
           
-          # Copy VSCode files
           Write-Host "Copying VSCode files..."
           Copy-Item -Path "app/*" -Destination "vscode-portable/app/" -Recurse -Force
           
-          # Copy launcher
           Copy-Item -Path "vscode-portable.exe" -Destination "vscode-portable/"
           
-          # Copy code.cmd if exists
           if (Test-Path "res/code.cmd") {
             Copy-Item -Path "res/code.cmd" -Destination "vscode-portable/"
           }
           
-          # Create README for users using here-string with single quotes
-          @'
-# VSCode Portable 1.101-50
-
-## Usage
-1. Run vscode-portable.exe to start Visual Studio Code
-2. All your settings and extensions will be saved in the data folder
-3. Use code.cmd for command-line access (if available)
-
-## What's New in VSCode 1.101
-- Enhanced AI capabilities with MCP support
-- Improved Copilot integration
-- Better multi-window support
-- Enhanced debugging tools
-
-Built by: hungvminh
-Source: https://github.com/hungvminh/vscode-portable
-'@ | Out-File -FilePath "vscode-portable/README.txt" -Encoding UTF8
+          $readme = "VSCode Portable 1.101-50`n`nUsage:`n1. Run vscode-portable.exe to start Visual Studio Code`n2. All your settings and extensions will be saved in the data folder`n3. Use code.cmd for command-line access if available`n`nBuilt by: hungvminh`nSource: https://github.com/hungvminh/vscode-portable"
+          $readme | Out-File -FilePath "vscode-portable/README.txt" -Encoding UTF8
           
-          # Create archive
           Write-Host "Creating archive..."
           Compress-Archive -Path "vscode-portable/*" -DestinationPath "vscode-portable-1.101-50-win64.zip" -Force
           
-          # Verify archive
           if (!(Test-Path "vscode-portable-1.101-50-win64.zip")) {
             Write-Error "Archive creation failed"
             exit 1
@@ -154,26 +127,6 @@ Source: https://github.com/hungvminh/vscode-portable
           files: |
             vscode-portable-1.101-50-win64.zip
             vscode-portable.exe
-          body: |
-            # VSCode Portable 1.101-50
-            
-            Portable version of Visual Studio Code 1.101 with latest AI features.
-            
-            ## Features
-            - VSCode 1.101 with MCP support
-            - Completely portable - no installation required
-            - All data stored in portable directory
-            - Windows 64-bit support
-            
-            ## Download
-            - **vscode-portable-1.101-50-win64.zip** - Complete portable package
-            - **vscode-portable.exe** - Launcher executable only
-            
-            ## Installation
-            1. Download the ZIP file
-            2. Extract to your preferred location
-            3. Run vscode-portable.exe
-            
-            Built by: hungvminh
+          body: "VSCode Portable 1.101-50 - Portable version of Visual Studio Code 1.101 with latest AI features. Built by hungvminh."
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
