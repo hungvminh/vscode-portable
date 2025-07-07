@@ -1,4 +1,4 @@
-module github.com/portapps/vscode-portable
+module github.com/hungvminh/vscode-portable
 
 go 1.24.0
 

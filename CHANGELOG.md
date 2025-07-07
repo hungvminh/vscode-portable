@@ -1,4 +1,12 @@
 # Changelog
+## 1.101-50 (2025/07/07) - Custom Build by hungvminh
+
+* Visual Studio Code 1.101
+* Custom portable build with enhanced features
+* Independent build system for personal fork
+* Updated AI capabilities and MCP support
+* Improved build automation and artifact generation
+
 
 ## 1.92.0-49 (2024/08/03)
 

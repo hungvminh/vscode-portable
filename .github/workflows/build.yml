@@ -5,8 +5,75 @@ on:
   push:
     tags:
       - '*'
+    branches:
+      - 'master'
+      - 'main'
   pull_request:
 
 jobs:
   build:
-    uses: portapps/.github/.github/workflows/app-build.yml@master
+    runs-on: windows-latest
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+      -
+        name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.24'
+      -
+        name: Build application
+        run: |
+          go mod download
+          go generate
+          go build -ldflags "-s -w" -o vscode-portable.exe
+      -
+        name: Download VSCode
+        shell: powershell
+        run: |
+          $version = "1.101"
+          $url = "https://update.code.visualstudio.com/$version/win32-x64-archive/stable"
+          Write-Host "Downloading VSCode $version from: $url"
+          Invoke-WebRequest -Uri $url -OutFile "vscode.zip" -UserAgent "Mozilla/5.0"
+          Expand-Archive -Path "vscode.zip" -DestinationPath "vscode-temp"
+          Move-Item "vscode-temp/*" "app/"
+      -
+        name: Create portable structure
+        shell: powershell
+        run: |
+          # Create portable directory structure
+          New-Item -ItemType Directory -Path "vscode-portable" -Force
+          New-Item -ItemType Directory -Path "vscode-portable/app" -Force
+          New-Item -ItemType Directory -Path "vscode-portable/data" -Force
+          
+          # Copy VSCode files
+          Copy-Item -Path "app/*" -Destination "vscode-portable/app/" -Recurse -Force
+          
+          # Copy launcher
+          Copy-Item -Path "vscode-portable.exe" -Destination "vscode-portable/"
+          
+          # Copy code.cmd
+          Copy-Item -Path "res/code.cmd" -Destination "vscode-portable/"
+          
+          # Create archive
+          Compress-Archive -Path "vscode-portable/*" -DestinationPath "vscode-portable-1.101-50-win64.zip"
+      -
+        name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-portable-1.101-50-win64
+          path: |
+            vscode-portable-1.101-50-win64.zip
+            vscode-portable.exe
+          retention-days: 30
+      -
+        name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            vscode-portable-1.101-50-win64.zip
+            vscode-portable.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

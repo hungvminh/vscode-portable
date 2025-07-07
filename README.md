@@ -1,38 +1,41 @@
-<p align="center"><a href="https://portapps.io/app/vscode-portable/" target="_blank"><img width="100" src="https://github.com/portapps/vscode-portable/blob/master/res/papp.png"></a></p>
-
 <p align="center">
-  <a href="https://portapps.io/app/vscode-portable/#download"><img src="https://img.shields.io/github/release/portapps/vscode-portable.svg?style=flat-square" alt="GitHub release"></a>
-  <a href="https://portapps.io/app/vscode-portable/#download"><img src="https://img.shields.io/github/downloads/portapps/vscode-portable/total.svg?style=flat-square" alt="Total downloads"></a>
-  <a href="https://github.com/portapps/vscode-portable/actions?workflow=build"><img src="https://img.shields.io/github/actions/workflow/status/portapps/vscode-portable/build.yml?label=build&logo=github&style=flat-square" alt="Build Status"></a>
-  <a href="https://goreportcard.com/report/github.com/portapps/vscode-portable"><img src="https://goreportcard.com/badge/github.com/portapps/vscode-portable?style=flat-square" alt="Go Report"></a>
-  <br /><a href="https://github.com/sponsors/crazy-max"><img src="https://img.shields.io/badge/sponsor-crazy--max-181717.svg?logo=github&style=flat-square" alt="Become a sponsor"></a>
-  <a href="https://www.paypal.me/crazyws"><img src="https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square" alt="Donate Paypal"></a>
+  <img width="100" src="https://github.com/hungvminh/vscode-portable/blob/master/res/papp.png">
 </p>
 
-## Notice of Non-Affiliation and Disclaimer
+<p align="center">
+  <a href="https://github.com/hungvminh/vscode-portable/releases"><img src="https://img.shields.io/github/release/hungvminh/vscode-portable.svg?style=flat-square" alt="GitHub release"></a>
+  <a href="https://github.com/hungvminh/vscode-portable/releases"><img src="https://img.shields.io/github/downloads/hungvminh/vscode-portable/total.svg?style=flat-square" alt="Total downloads"></a>
+  <a href="https://github.com/hungvminh/vscode-portable/actions?workflow=build"><img src="https://img.shields.io/github/actions/workflow/status/hungvminh/vscode-portable/build.yml?label=build&logo=github&style=flat-square" alt="Build Status"></a>
+</p>
 
-Portapps is not affiliated, associated, authorized, endorsed by, or in any way officially connected with Visual Studio Code™, or any of its subsidiaries or its affiliates.
+# VSCode Portable - Custom Build
 
-The official Visual Studio Code™ website can be found at https://code.visualstudio.com.
+A portable version of Visual Studio Code that can run from any location without installation.
 
-The name Visual Studio Code™ as well as related names, marks, emblems and images are registered trademarks of their respective owners.
+## Features
 
-## About
+- 🚀 Completely portable - no installation required
+- 💾 All data stored in portable directory
+- 🔧 Easy to use - just extract and run
+- 🆕 Latest VSCode version (1.101) with all new AI features
+- 🔒 Secure and isolated from system VSCode installations
 
-Visual Studio Code™ portable app made with 🚀 [Portapps](https://portapps.io).<br />
-Documentation and downloads can be found on https://portapps.io/app/vscode-portable/
+## Download
 
-## Contributing
+Download the latest version from the [Releases](https://github.com/hungvminh/vscode-portable/releases) page.
 
-Want to contribute? Awesome! The most basic way to show your support is to star the project, or to raise issues. If
-you want to open a pull request, please read the [contributing guidelines](https://portapps.io/doc/contribute/).
+## Usage
 
-You can also support this project by [**becoming a sponsor on GitHub**](https://github.com/sponsors/crazy-max) or by
-making a [Paypal donation](https://www.paypal.me/crazyws) to ensure this journey continues indefinitely!
+1. Download the latest release
+2. Extract the ZIP file to your preferred location
+3. Run `vscode-portable.exe`
+4. Your settings and extensions will be stored in the `data` folder
 
-Thanks again for your support, it is much appreciated! :pray:
+## Command Line Access
 
-## License
+Use `code.cmd` for command-line access to VSCode features:
 
-MIT. See `LICENSE` for more details.<br />
-Rocket icon credit to [Squid Ink](http://thesquid.ink).
+```bash
+code.cmd myfile.txt
+code.cmd --list-extensions
+code.cmd --install-extension ms-python.python
