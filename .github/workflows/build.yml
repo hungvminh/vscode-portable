@@ -9,6 +9,9 @@ on:
       - 'master'
       - 'main'
   pull_request:
+  # Optional: Run weekly to get latest VSCode automatically
+  schedule:
+    - cron: '0 0 * * 1'  # Every Monday at midnight
 
 jobs:
   build:
@@ -32,6 +35,59 @@ jobs:
           if (!(Test-Path "res/papp.manifest")) { Write-Error "res/papp.manifest not found"; exit 1 }
           Write-Host "All required files found"
       -
+        name: Get Latest VSCode Version
+        id: vscode-version
+        shell: powershell
+        run: |
+          Write-Host "Detecting latest VSCode version..."
+          
+          # Method 1: Try GitHub API (most reliable)
+          try {
+            $apiUrl = "https://api.github.com/repos/microsoft/vscode/releases/latest"
+            $response = Invoke-RestMethod -Uri $apiUrl -Headers @{"Accept" = "application/vnd.github.v3+json"}
+            $latestVersion = $response.tag_name
+            Write-Host "GitHub API found version: $latestVersion"
+            
+            # Validate format (should be like "1.101.0")
+            if ($latestVersion -match '^\d+\.\d+\.\d+$') {
+              Write-Host "Using GitHub API version: $latestVersion"
+              echo "VSCODE_VERSION=$latestVersion" >> $env:GITHUB_OUTPUT
+              echo "VERSION_SOURCE=GitHub API" >> $env:GITHUB_OUTPUT
+              exit 0
+            }
+          } catch {
+            Write-Host "GitHub API failed: $_"
+          }
+          
+          # Method 2: Try common latest versions (fallback)
+          $testVersions = @(
+            "1.101.2", "1.101.1", "1.101.0",
+            "1.100.3", "1.100.2", "1.100.1", "1.100.0",
+            "1.99.3", "1.99.2", "1.99.1", "1.99.0"
+          )
+          
+          foreach ($version in $testVersions) {
+            $testUrl = "https://update.code.visualstudio.com/$version/win32-x64-archive/stable"
+            try {
+              $response = Invoke-WebRequest -Uri $testUrl -Method Head -TimeoutSec 10 -UserAgent "Mozilla/5.0"
+              if ($response.StatusCode -eq 200) {
+                Write-Host "Found working version: $version"
+                echo "VSCODE_VERSION=$version" >> $env:GITHUB_OUTPUT
+                echo "VERSION_SOURCE=Version probe" >> $env:GITHUB_OUTPUT
+                exit 0
+              }
+            } catch {
+              Write-Host "Version $version not available"
+              continue
+            }
+          }
+          
+          # Method 3: Last resort - use a known stable version
+          $fallbackVersion = "1.101.0"
+          Write-Host "Using fallback version: $fallbackVersion"
+          echo "VSCODE_VERSION=$fallbackVersion" >> $env:GITHUB_OUTPUT
+          echo "VERSION_SOURCE=Fallback" >> $env:GITHUB_OUTPUT
+      -
         name: Build application
         run: |
           go mod download
@@ -43,23 +99,30 @@ jobs:
         name: Download VSCode
         shell: powershell
         run: |
-          $version = "1.101.2"
+          $version = "${{ steps.vscode-version.outputs.VSCODE_VERSION }}"
+          $versionSource = "${{ steps.vscode-version.outputs.VERSION_SOURCE }}"
+          
+          Write-Host "Downloading VSCode $version (detected via: $versionSource)"
+          
           $url = "https://update.code.visualstudio.com/$version/win32-x64-archive/stable"
-          Write-Host "Downloading VSCode $version from: $url"
+          Write-Host "Download URL: $url"
           
           New-Item -ItemType Directory -Path "temp" -Force
           
+          # Download with retry logic
           $maxRetries = 3
           $retryCount = 0
           do {
             try {
               Invoke-WebRequest -Uri $url -OutFile "temp/vscode.zip" -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-              Write-Host "Download completed"
+              Write-Host "Successfully downloaded VSCode $version"
               break
             } catch {
               $retryCount++
-              Write-Host "Download failed, retry $retryCount/$maxRetries"
-              if ($retryCount -ge $maxRetries) { throw }
+              Write-Host "Download failed, retry $retryCount/$maxRetries : $_"
+              if ($retryCount -ge $maxRetries) { 
+                throw "Failed to download VSCode after $maxRetries attempts"
+              }
               Start-Sleep -Seconds 5
             }
           } while ($retryCount -lt $maxRetries)
@@ -76,10 +139,36 @@ jobs:
           }
           Write-Host "VSCode extracted successfully"
       -
+        name: Update version info dynamically
+        shell: powershell
+        run: |
+          $version = "${{ steps.vscode-version.outputs.VSCODE_VERSION }}"
+          $versionParts = $version.Split('.')
+          $major = $versionParts[0]
+          $minor = $versionParts[1]
+          $patch = $versionParts[2]
+          
+          # Update versioninfo.json with detected version
+          $versionInfo = Get-Content "versioninfo.json" | ConvertFrom-Json
+          $versionInfo.FixedFileInfo.FileVersion.Major = [int]$major
+          $versionInfo.FixedFileInfo.FileVersion.Minor = [int]$minor
+          $versionInfo.FixedFileInfo.FileVersion.Patch = [int]$patch
+          $versionInfo.FixedFileInfo.ProductVersion.Major = [int]$major
+          $versionInfo.FixedFileInfo.ProductVersion.Minor = [int]$minor
+          $versionInfo.FixedFileInfo.ProductVersion.Patch = [int]$patch
+          $versionInfo.StringFileInfo."040904b0".FileVersion = "$version.50"
+          $versionInfo.StringFileInfo."040904b0".ProductVersion = "$version.50"
+          
+          $versionInfo | ConvertTo-Json -Depth 10 | Set-Content "versioninfo.json"
+          Write-Host "Updated versioninfo.json with VSCode version $version"
+      -
         name: Create portable structure
         shell: powershell
         run: |
-          Write-Host "Creating portable structure..."
+          $version = "${{ steps.vscode-version.outputs.VSCODE_VERSION }}"
+          $versionSource = "${{ steps.vscode-version.outputs.VERSION_SOURCE }}"
+          
+          Write-Host "Creating portable structure for VSCode $version..."
           
           New-Item -ItemType Directory -Path "vscode-portable" -Force
           New-Item -ItemType Directory -Path "vscode-portable/app" -Force
@@ -97,26 +186,31 @@ jobs:
             Copy-Item -Path "res/code.cmd" -Destination "vscode-portable/"
           }
           
-          $readme = "VSCode Portable 1.101-50`n`nUsage:`n1. Run vscode-portable.exe to start Visual Studio Code`n2. All your settings and extensions will be saved in the data folder`n3. Use code.cmd for command-line access if available`n`nBuilt by: hungvminh`nSource: https://github.com/hungvminh/vscode-portable"
+          $buildDate = Get-Date -Format "yyyy-MM-dd"
+          $readme = "VSCode Portable $version-50`n`nAuto-built on: $buildDate`nVSCode version: $version (detected via: $versionSource)`n`nUsage:`n1. Run vscode-portable.exe to start Visual Studio Code`n2. All your settings and extensions will be saved in the data folder`n3. Use code.cmd for command-line access if available`n`nBuilt by: hungvminh`nSource: https://github.com/hungvminh/vscode-portable"
           $readme | Out-File -FilePath "vscode-portable/README.txt" -Encoding UTF8
           
           Write-Host "Creating archive..."
-          Compress-Archive -Path "vscode-portable/*" -DestinationPath "vscode-portable-1.101-50-win64.zip" -Force
+          $archiveName = "vscode-portable-$version-50-win64.zip"
+          Compress-Archive -Path "vscode-portable/*" -DestinationPath $archiveName -Force
           
-          if (!(Test-Path "vscode-portable-1.101-50-win64.zip")) {
+          if (!(Test-Path $archiveName)) {
             Write-Error "Archive creation failed"
             exit 1
           }
           
-          $archiveSize = (Get-Item "vscode-portable-1.101-50-win64.zip").Length / 1MB
-          Write-Host "Archive created successfully ($([math]::Round($archiveSize, 2)) MB)"
+          $archiveSize = (Get-Item $archiveName).Length / 1MB
+          Write-Host "Archive created successfully: $archiveName ($([math]::Round($archiveSize, 2)) MB)"
+          
+          # Set output for later steps
+          echo "ARCHIVE_NAME=$archiveName" >> $env:GITHUB_OUTPUT
       -
         name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: vscode-portable-1.101-50-win64
+          name: vscode-portable-${{ steps.vscode-version.outputs.VSCODE_VERSION }}-50-win64
           path: |
-            vscode-portable-1.101-50-win64.zip
+            vscode-portable-${{ steps.vscode-version.outputs.VSCODE_VERSION }}-50-win64.zip
             vscode-portable.exe
           retention-days: 30
       -
@@ -125,8 +219,27 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            vscode-portable-1.101-50-win64.zip
+            vscode-portable-${{ steps.vscode-version.outputs.VSCODE_VERSION }}-50-win64.zip
             vscode-portable.exe
-          body: "VSCode Portable 1.101-50 - Portable version of Visual Studio Code 1.101 with latest AI features. Built by hungvminh."
+          body: |
+            # VSCode Portable ${{ steps.vscode-version.outputs.VSCODE_VERSION }}-50
+            
+            Portable version of Visual Studio Code ${{ steps.vscode-version.outputs.VSCODE_VERSION }} with latest features.
+            
+            **Auto-detected version**: ${{ steps.vscode-version.outputs.VSCODE_VERSION }} (via ${{ steps.vscode-version.outputs.VERSION_SOURCE }})
+            **Build date**: ${{ github.run_id }}
+            
+            ## Features
+            - VSCode ${{ steps.vscode-version.outputs.VSCODE_VERSION }} with latest features
+            - Completely portable - no installation required
+            - All data stored in portable directory
+            - Windows 64-bit support
+            - Auto-updating build system
+            
+            ## Download
+            - **vscode-portable-${{ steps.vscode-version.outputs.VSCODE_VERSION }}-50-win64.zip** - Complete portable package
+            - **vscode-portable.exe** - Launcher executable only
+            
+            Built by: hungvminh with auto-detection
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
