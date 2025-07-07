@@ -30,7 +30,7 @@ jobs:
           if (!(Test-Path "versioninfo.json")) { Write-Error "versioninfo.json not found"; exit 1 }
           if (!(Test-Path "res/papp.ico")) { Write-Error "res/papp.ico not found"; exit 1 }
           if (!(Test-Path "res/papp.manifest")) { Write-Error "res/papp.manifest not found"; exit 1 }
-          Write-Host "✅ All required files found"
+          Write-Host "All required files found"
       -
         name: Build application
         run: |
@@ -38,7 +38,7 @@ jobs:
           go mod tidy
           go generate
           go build -ldflags "-s -w" -o vscode-portable.exe
-          Write-Host "✅ Build completed successfully"
+          Write-Host "Build completed successfully"
       -
         name: Download VSCode
         shell: powershell
@@ -56,11 +56,11 @@ jobs:
           do {
             try {
               Invoke-WebRequest -Uri $url -OutFile "temp/vscode.zip" -UserAgent "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-              Write-Host "✅ Download completed"
+              Write-Host "Download completed"
               break
             } catch {
               $retryCount++
-              Write-Host "❌ Download failed, retry $retryCount/$maxRetries"
+              Write-Host "Download failed, retry $retryCount/$maxRetries"
               if ($retryCount -ge $maxRetries) { throw }
               Start-Sleep -Seconds 5
             }
@@ -79,7 +79,7 @@ jobs:
             Write-Error "VSCode extraction failed - Code.exe not found"
             exit 1 
           }
-          Write-Host "✅ VSCode extracted successfully"
+          Write-Host "VSCode extracted successfully"
       -
         name: Create portable structure
         shell: powershell
@@ -106,13 +106,13 @@ jobs:
             Copy-Item -Path "res/code.cmd" -Destination "vscode-portable/"
           }
           
-          # Create README for users
-          @"
+          # Create README for users using here-string with single quotes
+          @'
 # VSCode Portable 1.101-50
 
 ## Usage
 1. Run vscode-portable.exe to start Visual Studio Code
-2. All your settings and extensions will be saved in the 'data' folder
+2. All your settings and extensions will be saved in the data folder
 3. Use code.cmd for command-line access (if available)
 
 ## What's New in VSCode 1.101
@@ -123,7 +123,7 @@ jobs:
 
 Built by: hungvminh
 Source: https://github.com/hungvminh/vscode-portable
-"@ | Out-File -FilePath "vscode-portable/README.txt" -Encoding UTF8
+'@ | Out-File -FilePath "vscode-portable/README.txt" -Encoding UTF8
           
           # Create archive
           Write-Host "Creating archive..."
@@ -136,7 +136,7 @@ Source: https://github.com/hungvminh/vscode-portable
           }
           
           $archiveSize = (Get-Item "vscode-portable-1.101-50-win64.zip").Length / 1MB
-          Write-Host "✅ Archive created successfully ($([math]::Round($archiveSize, 2)) MB)"
+          Write-Host "Archive created successfully ($([math]::Round($archiveSize, 2)) MB)"
       -
         name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -160,10 +160,10 @@ Source: https://github.com/hungvminh/vscode-portable
             Portable version of Visual Studio Code 1.101 with latest AI features.
             
             ## Features
-            - ✅ VSCode 1.101 with MCP support
-            - ✅ Completely portable - no installation required
-            - ✅ All data stored in portable directory
-            - ✅ Windows 64-bit support
+            - VSCode 1.101 with MCP support
+            - Completely portable - no installation required
+            - All data stored in portable directory
+            - Windows 64-bit support
             
             ## Download
             - **vscode-portable-1.101-50-win64.zip** - Complete portable package
@@ -172,7 +172,7 @@ Source: https://github.com/hungvminh/vscode-portable
             ## Installation
             1. Download the ZIP file
             2. Extract to your preferred location
-            3. Run `vscode-portable.exe`
+            3. Run vscode-portable.exe
             
             Built by: hungvminh
         env:
