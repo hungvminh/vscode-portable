@@ -1,0 +1,41 @@
+{
+  "FixedFileInfo": {
+    "FileVersion": {
+      "Major": 1,
+      "Minor": 101,
+      "Patch": 0,
+      "Build": 50
+    },
+    "ProductVersion": {
+      "Major": 1,
+      "Minor": 101,
+      "Patch": 0,
+      "Build": 50
+    },
+    "FileFlagsMask": "3f",
+    "FileFlags": "00",
+    "FileOS": "040004",
+    "FileType": "01",
+    "FileSubType": "00"
+  },
+  "StringFileInfo": {
+    "040904b0": {
+      "CompanyName": "hungvminh",
+      "FileDescription": "Visual Studio Code Portable",
+      "FileVersion": "1.101.0.50",
+      "InternalName": "vscode-portable",
+      "LegalCopyright": "Copyright (c) 2025 hungvminh",
+      "OriginalFilename": "vscode-portable.exe",
+      "ProductName": "VSCode Portable",
+      "ProductVersion": "1.101.0.50"
+    }
+  },
+  "VarFileInfo": {
+    "Translation": {
+      "LangID": "0409",
+      "CharsetID": "04b0"
+    }
+  },
+  "IconPath": "res/papp.ico",
+  "ManifestPath": "res/papp.manifest"
+}

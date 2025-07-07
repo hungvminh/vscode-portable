@@ -32,9 +32,6 @@ func init() {
 	if app, err = portapps.NewWithCfg("vscode-portable", "Visual Studio Code Portable (Custom Build)", cfg); err != nil {
 		log.Fatal().Err(err).Msg("Cannot initialize application. See log file for more info.")
 	}
-	
-	// Set custom user agent and info
-	app.UserAgent = "VSCode-Portable-hungvminh/1.101"
 }
 
 func main() {
